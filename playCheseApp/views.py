@@ -35,6 +35,16 @@ def make_size(request):
         response['error_num'] = 1
     return JsonResponse(response)
 
+def restart(request):
+    response = {}
+    try:
+        response['error_num'] = 0
+        response['msg'] = 'success'
+    except Exception as e:
+        response['msg'] = str(e)
+        response['error_num'] = 1
+    return JsonResponse(response)
+
 def sendPos(request):
     response = {}
     try:
