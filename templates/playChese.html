@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gamma Lab 棋室</title>
+    <script src="https://unpkg.com/vue@next"></script>
+</head>
+<body>
+    <div id="app"></div>
+</body>
+<script>
+   const app = Vue.createApp({
+        data() {
+            return {
+                content: "欢迎来到GAMMA Lab棋室",
+                setMeal: "开始新游戏 继续游戏",
+                isShowMeal:false,
+                list:[],
+                inputValue:''
+            }
+        },
+        methods: {
+            welcomeBtnClick() {
+                this.content="请开始你的表演"
+            },
+            byeBtnClick() {
+                this.content="还没有历史记录"
+            },
+            showOrHideBtnClick() {
+                this.isShowMeal = !this.isShowMeal
+            },
+            handleAddItem() {
+                this.list.push(this.inputValue)
+                this.inputValue=''
+            }
+        },
+       template: `<div>
+                        <my-title />
+
+                        <div>
+                            <input v-model="inputValue"/>
+                            <button v-on:click="handleAddItem">添加玩家</button>
+                        </div>
+                        <div>
+                            <ul>
+                                <player
+                                    v-for="(item,index,score) of list"
+                                    v-bind:item="item"
+                                    v-bind:index="index"
+                                    v-bind:score="score"
+                                />
+                            </ul>
+                        </div>
+
+                        <button v-on:click="welcomeBtnClick">开始游戏</button>&nbsp;
+                        <button v-on:click="byeBtnClick">上局回顾</button>
+                        <div>
+                            <div v-if="isShowMeal">{{setMeal}}</div>
+                            <button v-on:click="showOrHideBtnClick">显示/隐藏菜单</button>
+                        </div>
+                   </div>`
+   })
+    app.component('my-title', {
+        template:'<h1 style="text=align:center">Gamma Lab 智能棋盘室</h1>'
+    })
+
+    app.component('player', {
+        props: ['item', 'index', 'score'],
+        template:`<li >[{{index}}]-{{item}}-{{score}}</li>`
+    })
+    app.mount("#app")
+</script>
+</html>
