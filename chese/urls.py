@@ -31,6 +31,6 @@ import playCheseApp.urls as pu
 urlpatterns = [
     url(r'^admin/',admin.site.urls,),
     url(r'api/',include(pu),),
-    url(r'^$', TemplateView.as_view(template_name="chess.html")),
+    url(r'^$', TemplateView.as_view(template_name="index.html")),
     path(r'playChese/',views.playChese),
 ]
