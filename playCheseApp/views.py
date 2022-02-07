@@ -10,12 +10,14 @@ from .models import Size
 # 全局变量
 N = 5  # N*N
 chessboard = np.ones((N, N))
-x1,x2,y1,y2 = 0,0,0,0
+x1, x2, y1, y2 = 0, 0, 0, 0
+
 
 @require_http_methods(["GET"])
 def get_piece_array(request):
-    arr = np.ones((15,15))
+    arr = np.ones((15, 15))
     return JsonResponse(arr.tolist(), safe=False)
+
 
 @require_http_methods(["GET"])
 def restart(request):
@@ -49,51 +51,57 @@ def make_size(request):
         response['error_num'] = 1
     return JsonResponse(response)
 
+
 @require_http_methods(["GET"])
 def sendPos(request):
-    response = int(request.GET.get('x1'))
-    print(response)
     response = {}
     try:
-        global x1,x2,y1,y2
-        x1 = int(request.GET.get('x1'))
-        y1 = int(request.GET.get('y1'))
-        x2 = int(request.GET.get('x2'))
-        y2 = int(request.GET.get('y2'))
+        global x1, x2, y1, y2
+        # 前端比后端坐标多1
+        x1 = int(request.GET.get('x1'))-1
+        y1 = int(request.GET.get('y1'))-1
+        x2 = int(request.GET.get('x2'))-1
+        y2 = int(request.GET.get('y2'))-1
+        print('x1:', x1, ' y1:', y1, ' x2:', x2, ' y2:', y2)
         # 判断是否可以移动
-        if x2 < N and x2 > 0 and y2 < N and y2 < 0:
+        if x2 < N and x2 >= 0 and y2 < N and y2 >= 0 and chessboard[x2][y2] == 0 and chessboard[x1][y1] == 1:
+            move = 1
             chessboard[x1][y1] = 0
             chessboard[x2][y2] = 1
-            a1,b1 = x2,y2
+            a1, b1 = x2, y2
+            # 判断移动模式
             if x1 == x2:
-                if y1 > y2:
+                if y1 > y2:  # 下移
                     chessboard[x1][y2+1] = 0
-                    a2,b2 = x1,y2+1
-                else:
+                    a2, b2 = x1, y2+1
+                else:   # 上移
                     chessboard[x1][y1+1] = 0
-                    a2,b2 = x1,y1+1
-            if y1 == y2:
-                if x1 > x2:
+                    a2, b2 = x1, y1+1
+            elif y1 == y2:
+                if x1 > x2:  # 左移
                     chessboard[x2+1][y1] = 0
-                    a2,b2 = x2+1,y1
-                else:
+                    a2, b2 = x2+1, y1
+                else:  # 右移
                     chessboard[x1+1][y2] = 0
-                    a2,b2 = x1+1,y2
-            response['x1'] = a1
-            response['y1'] = b1
-            response['x2'] = a2
-            response['y2'] = b2
+                    a2, b2 = x1+1, y2
+            # 还原前端坐标
+            response['x1'] = a1 + 1
+            response['y1'] = b1 + 1
+            response['x2'] = a2 + 1
+            response['y2'] = b2 + 1 
+            response['ifmove'] = move
             print(response)
     except Exception as e:
         response['msg'] = str(e)
         response['error_num'] = 1
     return JsonResponse(response)
 
+
 def checkEnd(request):
     response = {}
-    end = False 
-    for x in range(0,N):
-        for y in range(0,N):
+    end = False
+    for x in range(0, N):
+        for y in range(0, N):
             # 判断能否上移
             if y + 2 < N and chessboard[x][y+1] == 1 and chessboard[x][y+2] == 0:
                 end = True
