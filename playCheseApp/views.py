@@ -16,7 +16,7 @@ x1, x2, y1, y2 = 0, 0, 0, 0
 
 @require_http_methods(["GET"])
 def get_piece_array(request):
-    arr = np.ones((15, 15))
+    arr = np.ones((15, 15)) 
     return JsonResponse(arr.tolist(), safe=False)
 
 
@@ -66,10 +66,8 @@ def sendPos(request):
         x2 = int(request.GET.get('x2'))-1
         y2 = int(request.GET.get('y2'))-1
         print('x1:', x1, ' y1:', y1, ' x2:', x2, ' y2:', y2)
-        print('chessboard[x2][y2]:',chessboard[x2][y2])
-        print('chessboard[x1][y1]',chessboard[x1][y1])
         # 判断是否可以移动
-        if chessboard[x2][y2] == 0 and chessboard[x1][y1] == 1:
+        if chessboard[x2][y2] == 0 and chessboard[x1][y1] == 1 and chessboard[int((x1+x2)/2)][int((y1+y2)/2)] == 1:
             move = 1
             chessboard[x1][y1] = 0
             chessboard[x2][y2] = 1
@@ -94,11 +92,12 @@ def sendPos(request):
             response['y1'] = b1 + 1
             response['x2'] = a2 + 1
             response['y2'] = b2 + 1 
-            response['ifmove'] = move
             print(response)
     except Exception as e:
         response['msg'] = str(e)
         response['error_num'] = 1
+
+    response['ifmove'] = move
     return JsonResponse(response)
 
 
@@ -107,19 +106,21 @@ def checkEnd(request):
     end = True
     for x in range(0, N):
         for y in range(0, N):
-            # 判断能否上移
-            if y + 2 < N and chessboard[x][y+1] == 1 and chessboard[x][y+2] == 0:
-                end = False
-            # 判断能否下移
-            if y - 2 >= 0 and chessboard[x][y-1] == 1 and chessboard[x][y-2] == 0:
-                end = False
-            # 判断能否右移
-            if x + 2 < N and chessboard[x+1][y] == 1 and chessboard[x+2][y] == 0:
-                end = False
-            # 判断能否左移
-            if x - 2 >= 0 and chessboard[x-1][y] == 1 and chessboard[x-2][y] == 0:
-                end = False
+            if chessboard[x][y] == 1: # 当前位置有棋子时
+                # 判断能否上移
+                if y + 2 < N and chessboard[x][y+1] == 1 and chessboard[x][y+2] == 0:
+                    end = False
+                # 判断能否下移
+                if y - 2 >= 0 and chessboard[x][y-1] == 1 and chessboard[x][y-2] == 0:
+                    end = False
+                # 判断能否右移
+                if x + 2 < N and chessboard[x+1][y] == 1 and chessboard[x+2][y] == 0:
+                    end = False
+                # 判断能否左移
+                if x - 2 >= 0 and chessboard[x-1][y] == 1 and chessboard[x-2][y] == 0:
+                    end = False
     response['end'] = end
+    print(response)
     return JsonResponse(response)
 
 def gethistory(request):
