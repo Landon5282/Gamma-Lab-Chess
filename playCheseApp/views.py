@@ -84,7 +84,7 @@ def sendPos(request):
                 else:  # 右移
                     chessboard[x1+1][y2] = 0
                     a2, b2 = x1+1, y2
-            # 还原前端坐标
+            # 还原前端坐标, 回复报文中(x1,y1)的位置应设置成1，(x2,y2)的位置设置成0
             response['x1'] = a1 + 1
             response['y1'] = b1 + 1
             response['x2'] = a2 + 1
@@ -99,21 +99,21 @@ def sendPos(request):
 
 def checkEnd(request):
     response = {}
-    end = False
+    end = True
     for x in range(0, N):
         for y in range(0, N):
             # 判断能否上移
             if y + 2 < N and chessboard[x][y+1] == 1 and chessboard[x][y+2] == 0:
-                end = True
+                end = False
             # 判断能否下移
             if y - 2 >= 0 and chessboard[x][y-1] == 1 and chessboard[x][y-2] == 0:
-                end = True
+                end = False
             # 判断能否右移
             if x + 2 < N and chessboard[x+1][y] == 1 and chessboard[x+2][y] == 0:
-                end = True
+                end = False
             # 判断能否左移
             if x - 2 >= 0 and chessboard[x-1][y] == 1 and chessboard[x-2][y] == 0:
-                end = True
+                end = False
     response['end'] = end
     return JsonResponse(response)
 
