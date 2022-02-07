@@ -58,62 +58,24 @@
           //传送棋子位置
           //this.sendPos();
           //画棋子
-          if (this.pieceMapArr[dx / 30][dy / 30] != 0) {   //如果这个位置有棋子
 
-            let x = dx / 30;
-            let y = dy / 30;
+          let x = dx / 30;
+          let y = dy / 30;
 
-            if (this.x1 == -1) {  //点击的第一个棋子
-              this.x1 = x;
-              this.y1 = y;
-              this.drawPiece(x, y, this.pieceColor[1]); //点击棋子变红
-              console.log("点击第一个位置：", this.x1, this.y1)
-            } else {   //点击的第二个棋子
-              this.x2 = x;
-              this.y2 = y;
-              console.log("点击第二个位置：", this.x2, this.y2)
-
-              let move = this.judgeMove(this.x1, this.y1, this.x2, this.y2);
-              console.log("move:", move)
-              if (move != -1) {    //如果是相邻的棋子
-                //this.drawPiece(dx, dy, this.pieceColor[1]); //点击棋子变红
-                console.log("相邻", move)
-                this.drawPiece(this.x2, this.y2, 'bisque');
-                this.drawPiece(this.x1, this.y1, 'bisque');
-                this.pieceMapArr[this.x1][this.y1] = 0;  //在棋盘上消除两个棋子
-                this.pieceMapArr[this.x2][this.y2] = 0;
-
-                switch (move) {
-                  case 1:
-                    this.pieceMapArr[this.x1][this.y1 + 2] = 1;
-                    this.drawPiece(this.x1, (this.y1 + 2), this.pieceColor[0]);
-                    break;
-                  case 2:
-                    this.pieceMapArr[this.x1][this.y1 - 2] = 1;
-                    this.drawPiece(this.x1, this.y1 - 2, this.pieceColor[0]);
-                    break;
-                  case 3:
-                    this.pieceMapArr[this.x1 - 2][this.y1] = 1;
-                    this.drawPiece(this.x1 - 2, this.y1, this.pieceColor[0]);
-                    break;
-                  case 4:
-                    this.pieceMapArr[this.x1 + 2][this.y1] = 1;
-                    this.drawPiece(this.x1 + 2, this.y1, this.pieceColor[0]);
-                    break;
-                  default:
-                    return;
-                }
-                //this.sendPos();
-              } else {   //如果是非相邻的
-                if (this.pieceMapArr[this.x1][this.y1] != 0)
-                  this.drawPiece(this.x1, this.y1, this.pieceColor[0]);  //将第一个棋子涂为黑色
-              }
-              this.x1 = -1;
-              this.y1 = -1;
-            }
-            this.step++;
+          if (this.x1 == -1) {  //点击的第一个棋子
+            this.x1 = x;
+            this.y1 = y;
+            this.drawPiece(x, y, this.pieceColor[1]); //点击棋子变红
+            console.log("点击第一个位置：", this.x1, this.y1)
           } else {
-            alert("不可移动空位！");
+            this.x2 = x;
+            this.y2 = y;
+            console.log("点击第二个位置：", this.x2, this.y2)
+
+            this.sendPos();
+            this.x1 = -1;
+            this.y1 = -1;
+            this.step++;
           }
         });
       }
@@ -150,12 +112,21 @@
       },
       //传送棋子位置
       sendPos() {
-        this.$http.post('http://127.0.0.1:8000/api/sendpos', { x1: this.x1, y1: this.y1, x2: this.x2, y2: this.y2 })
+        this.$http.get('http://127.0.0.1:8000/api/sendPos', { params: { x1: this.x1, y1: this.y1, x2: this.x2, y2: this.y2 } })
           .then((response) => {
             var res = JSON.parse(response.bodyText)
             if (res.error_num == 1) {
               this.$message.error('传送棋子位置失败')
               console.log(res['msg'])
+            } else {
+
+              console.log(res.x1, res.y1, res['x2'], res['y2'])
+              console.log("ifmove:", res['ifmove'])
+
+              this.pieceMapArr[res.x1][res.y1] = 1;
+              this.pieceMapArr[res.x2][res.y2] = 0;
+              this.drawPiece(res.x1, res.y1, this.pieceColor[0]);
+              this.drawPiece(res.x2, res.y2, 'bisque');
             }
           })
       },
