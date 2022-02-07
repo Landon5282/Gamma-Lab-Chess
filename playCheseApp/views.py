@@ -10,6 +10,7 @@ from .models import Size
 # 全局变量
 N = 5  # N*N
 chessboard = np.ones((N, N))
+chessboard[int(N / 2), int(N / 2)] = 0
 x1, x2, y1, y2 = 0, 0, 0, 0
 
 
@@ -22,6 +23,7 @@ def get_piece_array(request):
 @require_http_methods(["GET"])
 def restart(request):
     response = {}
+    print(chessboard)
     try:
         response['error_num'] = 0
         response['msg'] = 'success'
@@ -55,6 +57,7 @@ def make_size(request):
 @require_http_methods(["GET"])
 def sendPos(request):
     response = {}
+    move = 0
     try:
         global x1, x2, y1, y2
         # 前端比后端坐标多1
@@ -63,8 +66,10 @@ def sendPos(request):
         x2 = int(request.GET.get('x2'))-1
         y2 = int(request.GET.get('y2'))-1
         print('x1:', x1, ' y1:', y1, ' x2:', x2, ' y2:', y2)
+        print('chessboard[x2][y2]:',chessboard[x2][y2])
+        print('chessboard[x1][y1]',chessboard[x1][y1])
         # 判断是否可以移动
-        if x2 < N and x2 >= 0 and y2 < N and y2 >= 0 and chessboard[x2][y2] == 0 and chessboard[x1][y1] == 1:
+        if chessboard[x2][y2] == 0 and chessboard[x1][y1] == 1:
             move = 1
             chessboard[x1][y1] = 0
             chessboard[x2][y2] = 1
