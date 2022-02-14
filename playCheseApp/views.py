@@ -1,3 +1,4 @@
+from urllib import response
 from django.shortcuts import render
 from django.views.decorators.http import require_http_methods
 from django.core import serializers
@@ -12,11 +13,13 @@ N = 5  # N*N
 chessboard = np.ones((N, N))
 chessboard[int(N / 2), int(N / 2)] = 0
 x1, x2, y1, y2 = 0, 0, 0, 0
+history = [[]]
+cur_index = 0
 
 
 @require_http_methods(["GET"])
 def get_piece_array(request):
-    arr = np.ones((15, 15)) 
+    arr = np.ones((15, 15))
     return JsonResponse(arr.tolist(), safe=False)
 
 
@@ -24,6 +27,10 @@ def get_piece_array(request):
 def restart(request):
     response = {}
     print(chessboard)
+    global history
+    global cur_index
+    history.append([])
+    cur_index += 1
     try:
         response['error_num'] = 0
         response['msg'] = 'success'
@@ -32,10 +39,16 @@ def restart(request):
         response['error_num'] = 1
     return JsonResponse(response)
 
+
 @require_http_methods(["GET"])
 def make_size(request):
     response = {}
     size = Size(size=5)
+    print(chessboard)
+    global history
+    global cur_index
+    history.append([])
+    cur_index += 1
     try:
         t = int(request.GET.get('size'))
         global N
@@ -60,6 +73,7 @@ def sendPos(request):
     move = 0
     try:
         global x1, x2, y1, y2
+        global history, cur_index
         # 前端比后端坐标多1
         x1 = int(request.GET.get('x1'))-1
         y1 = int(request.GET.get('y1'))-1
@@ -68,7 +82,12 @@ def sendPos(request):
         print('x1:', x1, ' y1:', y1, ' x2:', x2, ' y2:', y2)
         # 判断是否可以移动
         if chessboard[x2][y2] == 0 and chessboard[x1][y1] == 1 and chessboard[int((x1+x2)/2)][int((y1+y2)/2)] == 1:
+            # 移动标志
             move = 1
+            # 更新历史
+            history[cur_index].append({'x1': x1, 'y1': y1, 'x2': int(
+                (x1+x2)/2), 'y2': int((y1+y2)/2), 'x3': x2, 'y3': y2})
+            # 刷新数组
             chessboard[x1][y1] = 0
             chessboard[x2][y2] = 1
             a1, b1 = x2, y2
@@ -91,7 +110,7 @@ def sendPos(request):
             response['x1'] = a1 + 1
             response['y1'] = b1 + 1
             response['x2'] = a2 + 1
-            response['y2'] = b2 + 1 
+            response['y2'] = b2 + 1
             print(response)
     except Exception as e:
         response['msg'] = str(e)
@@ -106,7 +125,7 @@ def checkEnd(request):
     end = True
     for x in range(0, N):
         for y in range(0, N):
-            if chessboard[x][y] == 1: # 当前位置有棋子时
+            if chessboard[x][y] == 1:  # 当前位置有棋子时
                 # 判断能否上移
                 if y + 2 < N and chessboard[x][y+1] == 1 and chessboard[x][y+2] == 0:
                     end = False
@@ -123,10 +142,27 @@ def checkEnd(request):
     print(response)
     return JsonResponse(response)
 
+
 def gethistory(request):
     response = {}
     response['x1'] = x1
     response['y1'] = y1
     response['x2'] = x2
     response['y2'] = y2
+    return JsonResponse(response)
+
+
+def sendHistory(request):
+    response = {}
+    end = 0
+    cur = int(request.GET.get('count'))
+    if cur == len(history[cur_index]) - 1:
+        end = 1
+    response['end']=end
+    response['x1']=history[cur_index][cur]['x1']
+    response['y1']=history[cur_index][cur]['y1']
+    response['x2']=history[cur_index][cur]['x2']
+    response['y2']=history[cur_index][cur]['y2']
+    response['x3']=history[cur_index][cur]['x3']
+    response['y3']=history[cur_index][cur]['y3']
     return JsonResponse(response)
