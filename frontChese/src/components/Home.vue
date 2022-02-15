@@ -3,6 +3,7 @@
     <el-row display="margin-bottom: 1rem">
       <el-button @click="restartInit()" style="float:left; background: bisque; margin: 12px; cursor: pointer">重新开始</el-button>
       <el-button @click="regret()" style=" background: bisque; margin: 12px; cursor: pointer">悔棋</el-button>
+      <el-button @click="review()" style=" background: bisque; margin: 12px; cursor: pointer">棋局回放</el-button>
     </el-row>
     <el-row>{{endness}}</el-row>
     <el-row class="chess" display="margin-top:10px">
@@ -28,6 +29,7 @@
         x2: -1,
         y2: -1,
         flag: false,
+        count: 0,
         endness: '',
         toggle: true //true为canvas,false为dom
       }
@@ -264,28 +266,35 @@
         context.beginPath();
         context.closePath();
       },
+       //棋局回放
+       review() {
+        this.repaint();
+        this.initPieceArr();
+        this.drawpieceBoard(this.pieceMapArr);
 
-      //悔棋:先获取历史记录，history是列表
-      regret() {
-        this.$http.get('http://127.0.0.1:8000/api/gethistory')
-          .then((response) => {
-            var history = JSON.parse(response.bodyText)
-            if (this.toggle) {
-              //重画
-              this.repaint();
-              // 绘制棋盘
-              this.drawpieceBoard();
-              //绘制棋子
-              history.forEach(e => {
-                this.drawPiece(e.dx, e.dy, e.color)
-                this.pieceMapArr[e.dx / 30 - 1][e.dy / 30 - 1] = e.color;
-              });
-              this.step--;
-              if (history.length == 0 || this.flag) {
-                alert("已经不能悔棋了~")
+        this.timer = setInterval(() => {
+          this.$http.get('http://127.0.0.1:8000/api/sendpos', { params: { count: this.count} })
+            .then((response) => {
+
+              var res = JSON.parse(response.bodyText)
+
+              if (res.end == 0) {
+
+                this.pieceMapArr[res.x1][res.y1] = 0;
+                this.pieceMapArr[res.x2][res.y2] = 0;
+                this.pieceMapArr[res.x3][res.y3] = 1;
+
+                this.drawPiece(res.x3, res.y3, this.pieceColor[0]);
+                this.drawPiece(res.x2, res.y2, 'bisque');
+                this.drawPiece(res.x1, res.y1, 'bisque');
+
+                this.count++;
               }
-            }
-          })
+              else {
+                return;
+              }
+            })
+        }, 1500)
       },
     }
   }
