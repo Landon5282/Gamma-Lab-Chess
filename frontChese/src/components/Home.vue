@@ -291,6 +291,7 @@
                 this.count++;
               }
               else {
+                clearInterval(this.timer);
                 return;
               }
             })
