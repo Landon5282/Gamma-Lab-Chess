@@ -1,22 +1,28 @@
 <template>
   <div class="home">
+
+    <el-row class="chess" display="margin-top:10px">
+      <el-input v-model="inputname" placeholder="请输入玩家姓名" style="display:inline-table; width: 10%; float:left"></el-input>
+      <el-button @click="addPlayer()" style="margin: 2px; float:left; background: bisque">确认</el-button>
+    </el-row>
+
+    <el-row class="chess" display="margin-top: 10px">
+      <el-input v-model="inputsize" placeholder="请输入棋盘大小" style="display:inline-table; width: 10%; float: left"></el-input>
+      <el-button @click="makeSize()" style="margin: 2px; float: left; background: bisque">确认</el-button>
+    </el-row>
+    
     <el-row display="margin-bottom: 1rem">
-      <el-button @click="restartInit()" style="float:left; background: bisque; margin: 12px; cursor: pointer">重新开始</el-button>
-      <el-button @click="regret()" style=" background: bisque; margin: 12px; cursor: pointer">悔棋</el-button>
-      <el-button @click="review()" style=" background: bisque; margin: 12px; cursor: pointer">棋局回放</el-button>
-      <select name="" id="" v-model="selectID" @click="getID()" style="float: left; background: bisque; margin: 20px;
-         margin-bottom: 3rem; height: 30px; cursor: pointer; border-radius: 6px; ">
+      <el-button @click="start()" style="float:left; background: bisque; margin: 12px; cursor: pointer">开始</el-button>
+      <el-button @click="regret()" style=" float: left; background: bisque; margin: 12px; cursor: pointer">悔棋</el-button>
+      <!--<el-button @click="review()" style=" float: left; background: bisque; margin: 12px; cursor: pointer">回放本局</el-button>-->
+      <select name="" id="" v-model="selectID" @click="getID()" style="background: bisque; float: left; height: 30px;  border-radius: 6px; ">
         <option value="">  --选择回放棋局--  </option>
         <option v-for='item in orgList'>{{item}}</option>
       </select>
+      <el-button @click="review2()" style=" float: left; background: bisque; margin: 12px; cursor: pointer">确认回放</el-button>
     </el-row>
+
     <el-row>{{endness}}</el-row>
-    <el-row class="chess" display="margin-top:10px">
-      <el-input v-model="input" placeholder="请输入玩家姓名" style="display:inline-table; width: 20%; float:left"></el-input>
-      <el-button @click="addPlayer()" style="margin: 2px; float:left">确认</el-button>
-      <el-input v-model="size" placeholder="请输入棋盘大小" style="display:inline-table; width: 30%; float:left"></el-input>
-      <el-button @click="makeSize()" style="margin: 2px;">确认</el-button>
-    </el-row>
     <canvas id="myCanvas" ref="canvas" width="480" height="480">当前浏览器不支持Canvas</canvas>
   </div>
 </template>
@@ -26,6 +32,8 @@
     name: 'chess',
     data() {
       return {
+        inputsize:'',
+        inputname:'',
         size: '11',
         mid: 0,
         pieceMapArr: [], //记录棋盘落子情况
@@ -104,33 +112,51 @@
     },
     
     methods: {
-      //添加玩家
-      addPlayer() {
-        this.playerName = this.input;
-        this.input = '';
-        this.$http.get('http://127.0.0.1:8000/api/addplayer', { params: { name: this.playerName } })
-          .then((response) => {   //response是页面获取的结果
-            var res = JSON.parse(response.bodyText)
-            if (res.error_num == 0) {
-            } else {
-              this.$message.error('玩家姓名输入失败，请重试')
-              console.log(res['msg'])
-            }
-          })
-      },
-      
-      //从后端获取所有玩家信息
+    
+      //获取所有玩家信息
       getID: function () {
         this.$http.get('http://127.0.0.1:8000/api/getid')
           .then((response) => {
             var res = JSON.parse(response.bodyText);
+            
             if (res.error_num == 0) {
               this.orgList = res.data;
-              console.log("orgList:", this.orgList)
+              
             } else {
               alert("error!")
             }
           })
+      },
+      
+      //新增玩家
+      addPlayer() {
+        this.playerName = this.inputname;
+        this.inputname = '';
+      },
+      
+      //棋局开始
+      start() {
+        this.$http.get('http://127.0.0.1:8000/api/start', { params: { size: this.size, name: this.playerName } })
+          .then((response) => {   //response是页面获取的结果
+            var res = JSON.parse(response.bodyText)
+
+            if (res.error_num == 0) {
+              this.repaint();
+              this.initPieceArr();
+              this.drawpieceBoard(this.pieceMapArr);
+              this.step = 0;
+              this.flag = false;
+
+            } else {
+              this.$message.error('设置棋盘大小失败，请重试')
+              console.log(res['msg'])
+            }
+          })
+      },
+      //确定棋盘大小
+      makeSize() {
+        this.size = this.inputsize;
+        this.inputsize = '';
       },
       
       //选局回放
@@ -149,23 +175,6 @@
           })
       },
       
-      //确定棋盘大小
-      makeSize() {
-        this.$http.get('http://127.0.0.1:8000/api/make_size', { params: { size: this.size } })
-          .then((response) => {   //response是页面获取的结果
-            var res = JSON.parse(response.bodyText)
-            if (res.error_num == 0) {
-            } else {
-              this.$message.error('设置棋盘大小失败，请重试')
-              console.log(res['msg'])
-            }
-          })
-        this.repaint();
-        this.initPieceArr();
-        this.drawpieceBoard(this.pieceMapArr);
-        this.flag = false;
-        this.step = 0;
-      },
       //判断是否结束
       checkEnd() {
         this.$http.get('http://127.0.0.1:8000/api/checkend')
@@ -180,6 +189,7 @@
           }
           )
       },
+      
       //传送棋子位置
       sendPos() {
         this.$http.get('http://127.0.0.1:8000/api/sendPos', { params: { x1: this.x1, y1: this.y1, x2: this.x2, y2: this.y2 } })
