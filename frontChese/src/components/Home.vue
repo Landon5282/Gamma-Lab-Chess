@@ -4,9 +4,16 @@
       <el-button @click="restartInit()" style="float:left; background: bisque; margin: 12px; cursor: pointer">重新开始</el-button>
       <el-button @click="regret()" style=" background: bisque; margin: 12px; cursor: pointer">悔棋</el-button>
       <el-button @click="review()" style=" background: bisque; margin: 12px; cursor: pointer">棋局回放</el-button>
+      <select name="" id="" v-model="selectID" @click="getID()" style="float: left; background: bisque; margin: 20px;
+         margin-bottom: 3rem; height: 30px; cursor: pointer; border-radius: 6px; ">
+        <option value="">  --选择回放棋局--  </option>
+        <option v-for='item in orgList'>{{item}}</option>
+      </select>
     </el-row>
     <el-row>{{endness}}</el-row>
     <el-row class="chess" display="margin-top:10px">
+      <el-input v-model="input" placeholder="请输入玩家姓名" style="display:inline-table; width: 20%; float:left"></el-input>
+      <el-button @click="addPlayer()" style="margin: 2px; float:left">确认</el-button>
       <el-input v-model="size" placeholder="请输入棋盘大小" style="display:inline-table; width: 30%; float:left"></el-input>
       <el-button @click="makeSize()" style="margin: 2px;">确认</el-button>
     </el-row>
@@ -29,7 +36,7 @@
         x2: -1,
         y2: -1,
         flag: false,
-        count: 0,
+        orgList:[],
         endness: '',
         toggle: true //true为canvas,false为dom
       }
@@ -95,7 +102,53 @@
         });
       }
     },
+    
     methods: {
+      //添加玩家
+      addPlayer() {
+        this.playerName = this.input;
+        this.input = '';
+        this.$http.get('http://127.0.0.1:8000/api/addplayer', { params: { name: this.playerName } })
+          .then((response) => {   //response是页面获取的结果
+            var res = JSON.parse(response.bodyText)
+            if (res.error_num == 0) {
+            } else {
+              this.$message.error('玩家姓名输入失败，请重试')
+              console.log(res['msg'])
+            }
+          })
+      },
+      
+      //从后端获取所有玩家信息
+      getID: function () {
+        this.$http.get('http://127.0.0.1:8000/api/getid')
+          .then((response) => {
+            var res = JSON.parse(response.bodyText);
+            if (res.error_num == 0) {
+              this.orgList = res.data;
+              console.log("orgList:", this.orgList)
+            } else {
+              alert("error!")
+            }
+          })
+      },
+      
+      //选局回放
+      review_select() {
+        let i = 0;
+        
+        //参数selectID是点击选定的棋局
+        this.$http.get('http://127.0.0.1:8000/api/review_select',{ params: { id: this.selectID } })
+          .then((response) => {
+            var res = JSON.parse(response.bodyText);
+            if(res.error_num == 0){
+              this.review()
+            }else{
+              console.log("error!",res.msg)
+            }
+          })
+      },
+      
       //确定棋盘大小
       makeSize() {
         this.$http.get('http://127.0.0.1:8000/api/make_size', { params: { size: this.size } })
@@ -266,16 +319,19 @@
         context.beginPath();
         context.closePath();
       },
+      
        //棋局回放
        review() {
         this.repaint();
         this.initPieceArr();
         this.drawpieceBoard(this.pieceMapArr);
+        
+        let count:0
 
         this.timer = setInterval(() => {
-          this.$http.get('http://127.0.0.1:8000/api/sendpos', { params: { count: this.count} })
+          this.$http.get('http://127.0.0.1:8000/api/sendpos', { params: { count: count} })
             .then((response) => {
-
+            
               var res = JSON.parse(response.bodyText)
 
               if (res.end == 0) {
@@ -288,7 +344,7 @@
                 this.drawPiece(res.x2, res.y2, 'bisque');
                 this.drawPiece(res.x1, res.y1, 'bisque');
 
-                this.count++;
+                count++;
               }
               else {
                 clearInterval(this.timer);
